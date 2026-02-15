@@ -1,15 +1,17 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-  <meta charset="UTF-8"> <!-- Harflar to‘g‘ri chiqishi uchun -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Telefonlarga moslashadi -->
-  <title>Mening Saytim</title> <!-- Brauzer oynasida ko‘rinadigan nom -->
-</head>
-<body>
 
-  <h1>Assalomu alaykum!</h1>
-  <p>Bu mening birinchi HTML sahifam.</p>
-<p>A.A.F</p>
+import telebot
 
-</body>
-</html>
+API_TOKEN = "8401761833:AAFm4jSsYZ8d6eCAfIkpAe_J9ONC-OWyfWA"
+
+bot = telebot.TeleBot(API_TOKEN)
+
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    bot.send_message(message.chat.id, "Salom! Bot ishlayapti!")
+
+# Kichik xatolik bo‘lsa, doim qayta urinadi
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print("Xato:", e)
