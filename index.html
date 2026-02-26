@@ -1,82 +1,92 @@
-
 <!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hambi Chat v2</title>
+    <title>Hambi Chat v3</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background-color: #e5ddd5; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; }
-        #chatBox { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .sent { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 0; }
-        .received { background: white; align-self: flex-start; border-bottom-left-radius: 0; }
-        .time { font-size: 10px; color: #888; margin-top: 5px; text-align: right; }
-        .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
-        button { background: #075e54; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* Chat oynasi */
+        #chatBox { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 15px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .sent { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; }
+        .received { background: white; align-self: flex-start; border-top-left-radius: 0; }
+        .time { font-size: 10px; color: #888; text-align: right; margin-top: 4px; }
+
+        /* Xabar yozish qismi */
+        .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 8px; border-top: 1px solid #ddd; }
+        input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ccc; outline: none; }
+        button { background: #075e54; color: white; border: none; padding: 0 20px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        button:active { background: #128c7e; }
     </style>
 </head>
 <body>
 
-    <div class="header">Hambi Chat (Yangi baza)</div>
+    <div class="header">Hambi Chat (Online)</div>
     <div id="chatBox"></div>
 
     <div class="input-area">
         <input type="text" id="msgInput" placeholder="Xabar yozing..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">Yuborish</button>
+        <button onclick="sendMessage()">➤</button>
     </div>
 
     <script>
-        // SIZ YUBORGAN YANGI FIREBASE CONFIG
+        // SIZNING YANGI FIREBASE CONFIGURATSIYANGIZ
         const firebaseConfig = {
           apiKey: "AIzaSyCtzRr_obKE9zO1e67KA7GXSqw80ABwmtg",
           authDomain: "chat-71b57.firebaseapp.com",
           projectId: "chat-71b57",
           storageBucket: "chat-71b57.firebasestorage.app",
           messagingSenderId: "684391023374",
-          appId: "1:684391023374:web:905eb98dc8f2aaf0c68d5f",
-          measurementId: "G-QM4G4H0Z80"
+          appId: "1:684391023374:web:eba9eb9b95cf9f7cc68d5f",
+          measurementId: "G-HRSH90LDGM"
         };
 
         // Firebase-ni ishga tushirish
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Har bir qurilma uchun vaqtinchalik ID yaratish (kim yozganini bilish uchun)
-        const myId = Math.random().toString(36).substring(7);
+        // Qurilmani aniqlash (Kim o'ziniki, kim begona ekanini bilish uchun)
+        let myId = localStorage.getItem('chat_user_id');
+        if (!myId) {
+            myId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('chat_user_id', myId);
+        }
 
+        // Xabar yuborish
         function sendMessage() {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
-            if (text) {
+            if (text !== "") {
                 db.collection("messages").add({
                     text: text,
-                    sender: myId,
+                    senderId: myId,
                     time: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 input.value = "";
             }
         }
 
-        // Jonli xabarlarni qabul qilish
+        // Xabarlarni bazadan "jonli" o'qish
         db.collection("messages").orderBy("time", "asc").onSnapshot((snapshot) => {
             const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML = "";
+            chatBox.innerHTML = ""; 
+            
             snapshot.forEach((doc) => {
-                const msg = doc.data();
-                if (msg.time) { // Vaqt hali serverdan kelmagan bo'lsa kutish
+                const data = doc.data();
+                if (data.time) { // Vaqt serverdan kelishini kutish
                     const div = document.createElement('div');
-                    div.className = "msg " + (msg.sender === myId ? "sent" : "received");
+                    div.className = "msg " + (data.senderId === myId ? "sent" : "received");
                     
-                    const date = msg.time.toDate();
-                    const timeStr = date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0');
+                    const t = data.time.toDate();
+                    const clock = t.getHours() + ":" + t.getMinutes().toString().padStart(2, '0');
                     
-                    div.innerHTML = msg.text + `<div class="time">${timeStr}</div>`;
+                    div.innerHTML = `<div>${data.text}</div><div class="time">${clock}</div>`;
                     chatBox.appendChild(div);
                 }
             });
@@ -85,3 +95,4 @@
     </script>
 </body>
 </html>
+
